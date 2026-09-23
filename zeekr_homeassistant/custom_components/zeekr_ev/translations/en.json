@@ -1,0 +1,87 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to Zeekr Account",
+        "description": "Please enter your Zeekr credentials.",
+        "data": {
+          "username": "Username",
+          "password": "Password",
+          "country_code": "Country code",
+          "polling_interval": "Polling interval (minutes)",
+          "hmac_access_key": "HMAC access key",
+          "hmac_secret_key": "HMAC secret key",
+          "password_public_key": "Password public key",
+          "prod_secret": "Prod secret",
+          "vin_key": "VIN key",
+          "vin_iv": "VIN IV",
+          "use_local_api": "Use local API (custom_components/zeekr_ev_api)"
+        },
+        "data_description": {
+          "use_local_api": "Enable to use the local zeekr_ev_api folder from custom_components. Disable to use an installed package (pip)."
+        }
+      }
+    },
+    "error": {
+      "auth": "Username/Password is wrong.",
+      "invalid_base64_hmac_access_key": "HMAC access key must be base64 encoded.",
+      "invalid_length_min_32_hmac_access_key": "HMAC access key must be at least 32 characters.",
+      "invalid_base64_hmac_secret_key": "HMAC secret key must be base64 encoded.",
+      "invalid_length_min_32_hmac_secret_key": "HMAC secret key must be at least 32 characters.",
+      "invalid_base64_password_public_key": "Password public key must be base64 encoded.",
+      "invalid_length_min_200_password_public_key": "Password public key must be at least 200 characters.",
+      "invalid_base64_prod_secret": "Prod secret must be base64 encoded.",
+      "invalid_length_exact_32_prod_secret": "Prod secret must be exactly 32 characters.",
+      "invalid_base64_vin_key": "VIN key must be base64 encoded.",
+      "invalid_length_exact_16_vin_key": "VIN key must be exactly 16 characters.",
+      "invalid_base64_vin_iv": "VIN IV must be base64 encoded.",
+      "invalid_length_exact_16_vin_iv": "VIN IV must be exactly 16 characters."
+    },
+    "abort": {
+      "single_instance_allowed": "Only a single instance is allowed."
+    }
+  },
+  "options": {
+    "step": {
+      "user": {
+        "title": "Reconfigure Zeekr Account",
+        "description": "Update your Zeekr credentials and integration settings.",
+        "data": {
+          "username": "Username",
+          "password": "Password",
+          "country_code": "Country code",
+          "polling_interval": "Polling interval (minutes)",
+          "hmac_access_key": "HMAC access key",
+          "hmac_secret_key": "HMAC secret key",
+          "password_public_key": "Password public key",
+          "prod_secret": "Prod secret",
+          "vin_key": "VIN key",
+          "vin_iv": "VIN IV",
+          "drive_side": "Drive side",
+          "use_local_api": "Use local API (custom_components/zeekr_ev_api)"
+        },
+        "data_description": {
+          "use_local_api": "Enable to use the local zeekr_ev_api folder from custom_components. Disable to use an installed package (pip)."
+        }
+      }
+    },
+    "error": {
+      "auth": "Username/Password is wrong.",
+      "invalid_base64_hmac_access_key": "HMAC access key must be base64 encoded.",
+      "invalid_length_min_32_hmac_access_key": "HMAC access key must be at least 32 characters.",
+      "invalid_base64_hmac_secret_key": "HMAC secret key must be base64 encoded.",
+      "invalid_length_min_32_hmac_secret_key": "HMAC secret key must be at least 32 characters.",
+      "invalid_base64_password_public_key": "Password public key must be base64 encoded.",
+      "invalid_length_min_200_password_public_key": "Password public key must be at least 200 characters.",
+      "invalid_base64_prod_secret": "Prod secret must be base64 encoded.",
+      "invalid_length_exact_32_prod_secret": "Prod secret must be exactly 32 characters.",
+      "invalid_base64_vin_key": "VIN key must be base64 encoded.",
+      "invalid_length_exact_16_vin_key": "VIN key must be exactly 16 characters.",
+      "invalid_base64_vin_iv": "VIN IV must be base64 encoded.",
+      "invalid_length_exact_16_vin_iv": "VIN IV must be exactly 16 characters."
+    },
+    "abort": {
+      "reconfigure_successful": "Reconfiguration successful."
+    }
+  }
+}

@@ -1,0 +1,12 @@
+name: Draft a release note
+on:
+  workflow_dispatch:
+jobs:
+  draft_release:
+    name: Release Drafter
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run release-drafter
+        uses: release-drafter/release-drafter@v7.7.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

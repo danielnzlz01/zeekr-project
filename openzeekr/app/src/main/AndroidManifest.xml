@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Permissions, the BLE feature and the ProximityService are declared in :core
+         (com.openzeekr.core) and merged in, so both :app and :wear inherit them. -->
+
+    <application
+        android:name=".App"
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.OpenZeekr">
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:theme="@style/Theme.OpenZeekr">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- Send-to-car: register as a navigation / location target. Picking OpenZeekr from a
+             map pin's share, a geo: link, or a "navigate with" chooser pushes that POI to the
+             car's built-in nav (cloud sendToCar). Transparent, no UI — fires and finishes. -->
+        <activity
+            android:name=".SendToCarActivity"
+            android:exported="true"
+            android:label="@string/send_to_car_label"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:excludeFromRecents="true"
+            android:taskAffinity=""
+            android:noHistory="true">
+            <!-- geo: pins (open a geo link / share a place as geo:) -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="geo" />
+            </intent-filter>
+            <!-- "navigate with" chooser (google.navigation:) -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="google.navigation" />
+            </intent-filter>
+            <!-- a shared place (Google Maps "Share" sends the place as text/plain) -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+        </activity>
+
+        <!-- Shares the exported journey-log CSV out via the system share sheet. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
+        <!-- Answers the watch's request for the digital key (Wear Data Layer). -->
+        <service
+            android:name=".wear.PhoneKeySyncService"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.google.android.gms.wearable.MESSAGE_RECEIVED" />
+                <data android:scheme="wear" android:host="*" android:pathPrefix="/openzeekr/" />
+            </intent-filter>
+        </service>
+
+        <!-- FCM push: receives the car's message-centre pushes (security alarms, abnormal parking,
+             tow, charging, OTA) via the STOCK Firebase project (core secrets_firebase.xml). Data
+             messages reach onMessageReceived with the screen off; the 5-min inbox poll stays as a
+             fallback. -->
+        <service
+            android:name=".push.ZeekrFcmService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+        <!-- Notification-payload pushes the SDK auto-displays in the background land on
+             CarNotifier's "car_alerts" channel. -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="car_alerts" />
+    </application>
+</manifest>

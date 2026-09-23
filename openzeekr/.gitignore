@@ -1,0 +1,40 @@
+*.iml
+.gradle/
+/local.properties
+/.idea/
+/build/
+/app/build/
+/core/build/
+/wear/build/
+/captures/
+.externalNativeBuild/
+.cxx/
+# Signed release build outputs (APK is *.apk; also ignore the metadata + baseline profiles).
+/app/release/
+/wear/release/
+*.apk
+*.keystore
+*.jks
+# Never commit real secrets:
+secrets.json
+zeekr_secrets.json
+secrets.properties
+# JNI-baked secrets: generated at build time from secrets.properties into the native lib,
+# holds REAL secret values, regenerated on every build - never commit.
+/core/src/main/cpp/secrets_generated.h
+# Log-decrypt PRIVATE key - decrypts copied logs; devs keep it OFFLINE, never commit.
+# (The public key, tools/log-decrypt/public_key.pem, is safe to ship/commit.)
+/tools/log-decrypt/private_key.pem
+# Stock Firebase project config for FCM push — client config from the stock APK, kept local
+# only (see secrets_firebase.xml.example). Absent = FCM auto-init skips, push disabled.
+secrets_firebase.xml
+/core/src/main/res/values/secrets_firebase.xml
+# Release-signing config (passwords + keystore path) — keep local only.
+keystore.properties
+
+# Zeekr press renders are copyrighted — bundle locally, never publish.
+# Drop your own per-model white PNG/WebP here (see README): car_{001,x,7x,7gt,9x}.webp
+/app/src/main/assets/cars/
+
+# Watch hero car cutout (copyrighted render, supply locally)
+/wear/src/main/assets/cars/
