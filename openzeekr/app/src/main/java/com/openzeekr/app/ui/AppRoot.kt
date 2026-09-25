@@ -324,3 +324,34 @@ fun AppRoot(deps: Deps) {
 
 // Revolut tip link shown in the one-time support note. Replace with the real revolut.me handle.
 private const val REVOLUT_URL = "https://revolut.me/REPLACE_ME"
+
+/** Share end/expiry epoch (ms, or seconds) -> short local date. */
+private fun formatShareDate(epoch: Long): String {
+    val ms = if (epoch < 100_000_000_000L) epoch * 1000 else epoch
+    return java.text.SimpleDateFormat("d MMM yyyy", java.util.Locale.getDefault()).format(java.util.Date(ms))
+}
+
+/** Prompt shown once per new release when a newer GitHub build is available. */
+@Composable
+private fun UpdateAvailableDialog(
+    installed: String,
+    rel: ReleaseInfo,
+    onDownload: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Update available") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("OpenZeekr ${rel.version} is available. You have $installed.")
+                if (rel.notes.isNotBlank()) Text(
+                    rel.notes.trim().lines().filter { it.isNotBlank() }.take(8).joinToString("\n"),
+                    fontSize = 12.sp, color = Brand.muted,
+                )
+            }
+        },
+        confirmButton = { TextButton(onClick = onDownload) { Text("Download") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Later") } },
+    )
+}
