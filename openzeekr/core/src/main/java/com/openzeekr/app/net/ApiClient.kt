@@ -35,6 +35,9 @@ class ApiClient private constructor(private val store: ConfigStore) {
         val ok = OkHttpClient.Builder()
             .connectTimeout(20, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
+            // Decompress gzip responses ourselves (we send our own Accept-Encoding, which disables
+            // OkHttp's transparent gunzip). Network interceptor so logging sees decompressed bodies.
+            .addNetworkInterceptor(GzipInterceptor())
             // Watches every response for the 079021 "logged in elsewhere" kick-out.
             .addInterceptor(KickoutInterceptor(store))
             .addInterceptor(HeaderInterceptor(store))

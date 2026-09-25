@@ -43,6 +43,7 @@ class PushRegistrar(
     private val scope: CoroutineScope,
 ) {
     private val http = OkHttpClient.Builder()
+        .addNetworkInterceptor(com.openzeekr.app.net.GzipInterceptor())
         .connectTimeout(20, TimeUnit.SECONDS)
         .readTimeout(30, TimeUnit.SECONDS)
         .build()

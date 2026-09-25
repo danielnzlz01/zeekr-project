@@ -30,6 +30,12 @@ data class Region(
     /** Azure overseas-app gateway host (scheme+host, no trailing slash): usercenter + app-server +
      *  message-centre all hang off this one host. */
     val azureHost: String,
+    /** User-center (login) service path segment on [azureHost]. EU uses "zeekr-cuc-idaas"; the EM
+     *  markets suffix the region, e.g. LA/MX uses "zeekr-cuc-idaas-la" (Frida-verified). */
+    val usercenterService: String,
+    /** Message-centre service path segment on [azureHost] (FCM push registration). EU uses
+     *  "zom-message-core"; the EM markets prefix the region, e.g. LA/MX uses "la-message-core". */
+    val messageCoreService: String,
     /** xchanger/ECARX DK-backend host (scheme+host, no trailing slash) for the session/secure call. */
     val xchangerHost: String,
     /** X-PROJECT-ID the TSP/DK gateway validates. */
@@ -55,6 +61,8 @@ data class Region(
             code = "EU", displayName = "Europe (EU)",
             tspBaseUrl = "https://eu-snc-tsp-api-gw.zeekrlife.com",
             azureHost = "https://gateway-pub-azure.zeekr.eu",
+            usercenterService = "zeekr-cuc-idaas",
+            messageCoreService = "zom-message-core",
             xchangerHost = "https://api-zk.ecloudeu.com",
             projectId = "ZEEKR_EU", countryCode = "SE", snsRegion = "eu-central-1",
             extractorRegion = "EU", verified = true,
@@ -66,6 +74,8 @@ data class Region(
             code = "SEA", displayName = "Southeast Asia (SEA)",
             tspBaseUrl = "https://sea-snc-tsp-api-gw.zeekrlife.com",
             azureHost = "https://gateway-pub-hw-em-sg.zeekrlife.com",
+            usercenterService = "zeekr-cuc-idaas",   // unverified — no SEA account to confirm
+            messageCoreService = "zom-message-core", // unverified
             // host.txt APAC suffix .ecloudkr.com, ZEEKR gen2SingleAuthPrefix "https://api-zk".
             xchangerHost = "https://api-zk.ecloudkr.com",
             projectId = "ZEEKR_SEA", countryCode = "SG", snsRegion = "ap-southeast-1",
@@ -76,6 +86,8 @@ data class Region(
             code = "LA", displayName = "Latin America (LA)",
             tspBaseUrl = "https://la-snc-tsp-api-gw.zeekrlife.com",
             azureHost = "https://gateway-pub-hw-em-mx.zeekrlife.com",
+            usercenterService = "zeekr-cuc-idaas-la",   // Frida-verified against a live MX account
+            messageCoreService = "la-message-core",      // Frida-verified against a live MX account
             // Best-effort: LA rides the NA (.ecloudus.com) DK infra. Correct via override if wrong.
             xchangerHost = "https://api-zk.ecloudus.com",
             projectId = "ZEEKR_LA", countryCode = "MX", snsRegion = "us-east-1",
@@ -87,6 +99,8 @@ data class Region(
             code = "ME", displayName = "Middle East (ME)",
             tspBaseUrl = "https://me-snc-tsp-api-gw.zeekrlife.com",
             azureHost = "https://gateway-pub-aws-em-ae.zeekrlife.com",
+            usercenterService = "zeekr-cuc-idaas-me",   // best-effort EM pattern (like LA); unverified
+            messageCoreService = "me-message-core",      // best-effort EM pattern; unverified
             // Uncertain: ME may reuse EU (.ecloudeu.com) DK infra. Correct via override if wrong.
             xchangerHost = "https://api-zk.ecloudeu.com",
             projectId = "ZEEKR_ME", countryCode = "AE", snsRegion = "me-central-1",

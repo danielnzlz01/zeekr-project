@@ -127,15 +127,15 @@ fun SettingsScreen(deps: Deps, modifier: Modifier = Modifier) {
                 PrimaryButton("Sign in", Modifier.fillMaxWidth()) {
                     scope.launch {
                         status = "Signing in…"
-                        store.replace(cfg).fold(
-                            onSuccess = {
-                                status = when (val r = deps.auth.login()) {
-                                    is CallResult.Ok -> { cfg = store.current(); "Signed in ✓" }
-                                    is CallResult.Err -> "Sign-in failed: ${r.message}"
-                                }
-                            },
-                            onFailure = { status = "Save failed: ${it.message}" }
-                        )
+                        // Persist just the entered credentials NON-throwingly. store.replace() runs
+                        // check(), which rejects a blank VIN — and the VIN is always blank right after
+                        // sign-out (signOut() wipes it). The login/vehicle-list flow repopulates it,
+                        // so mirror the onboarding LoginStep and skip the strict pre-login validation.
+                        store.update { it.copy(email = cfg.email, password = cfg.password) }
+                        status = when (val r = deps.auth.login()) {
+                            is CallResult.Ok -> { cfg = store.current(); "Signed in ✓" }
+                            is CallResult.Err -> "Sign-in failed: ${r.message}"
+                        }
                     }
                 }
             } else {
@@ -197,6 +197,17 @@ fun SettingsScreen(deps: Deps, modifier: Modifier = Modifier) {
             // isn't shown to normal users between releases.
             if (liveCfg.devMode) OutlinedButton(onClick = { showHeroLab = true }, modifier = Modifier.fillMaxWidth()) {
                 Text("Hero lab (graphics test)")
+            }
+            // Dev: probe which mobileModel the DK backend has BLE calibration for on this car
+            // (diagnoses the 036708 "model not configured with Bluetooth calibration" wall).
+            if (liveCfg.devMode) OutlinedButton(onClick = {
+                status = "Probing DK calibration models… (watch the log)"
+                scope.launch {
+                    val r = deps.provisioning.probeCalibrationModels()
+                    status = r.getOrElse { "Probe failed: ${it.message}" }
+                }
+            }, modifier = Modifier.fillMaxWidth()) {
+                Text("Probe DK calibration models (dev)")
             }
             // Debug: send a liveness ping (non-actuating 0x0110/0x0A) and report whether the car
             // replied (it acks 0x0111). Verifies the DK COMMAND session is actually alive, not just

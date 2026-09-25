@@ -111,6 +111,8 @@ class ConfigStore private constructor(private val prefs: SharedPreferences) {
             regionCode = next.code,
             baseUrl = next.tspBaseUrl,
             azureHost = next.azureHost,
+            usercenterService = next.usercenterService,
+            messageCoreService = next.messageCoreService,
             xchangerHost = next.xchangerHost,
             projectId = next.projectId,
             snsRegion = next.snsRegion,

@@ -58,12 +58,14 @@ class AccountLogin(private val store: ConfigStore) {
 
     // user-center client: DEFAULT_HEADERS + X-HMAC-* (key = hmac_access/secret)
     private val ucClient = OkHttpClient.Builder()
+        .addNetworkInterceptor(GzipInterceptor())
         .addInterceptor(UcInterceptor())
         .addInterceptor(httpLogGate)
         .addInterceptor(httpLog)
         .build()
     // TSP client: LOGGED_IN_HEADERS + X-SIGNATURE (key = prod_secret) — reuses the app transport
     private val tspClient = OkHttpClient.Builder()
+        .addNetworkInterceptor(GzipInterceptor())
         .addInterceptor(HeaderInterceptor(store))
         .addInterceptor(SignInterceptor(store))
         .addInterceptor(httpLogGate)
@@ -71,6 +73,7 @@ class AccountLogin(private val store: ConfigStore) {
         .build()
     // xchanger (ECARX DK backend) client — plain; the authCode in the body is the auth.
     private val xchangerClient = OkHttpClient.Builder()
+        .addNetworkInterceptor(GzipInterceptor())
         .addInterceptor(httpLogGate)
         .addInterceptor(httpLog)
         .build()

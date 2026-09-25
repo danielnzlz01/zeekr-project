@@ -6,7 +6,10 @@ import okhttp3.Interceptor
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
+import okhttp3.ResponseBody.Companion.asResponseBody
 import okio.Buffer
+import okio.GzipSource
+import okio.buffer
 import java.util.UUID
 
 /**
@@ -32,7 +35,34 @@ class KickoutInterceptor(private val store: ConfigStore) : Interceptor {
 }
 
 /**
- * TSP-gateway transport (bearer login, vehicle list, DK provisioning, remote
+ * Manually decompresses `Content-Encoding: gzip` responses.
+ *
+ * The app advertises its own `Accept-Encoding: gzip` header (to mirror the stock app), which
+ * DISABLES OkHttp's transparent gunzip — OkHttp only auto-decompresses when it added the header
+ * itself. EU's gateway returns identity so this never mattered, but the LA/EM (Mexico) gateways
+ * honor gzip, so responses arrive as raw gzip bytes and JSON parsing dies at offset 0 (the body
+ * shows up as binary like `\u001f\u008b...`). This network interceptor unwraps gzip ourselves.
+ * Responses without a gzip `Content-Encoding` (e.g. EU) pass through untouched, so no other region
+ * changes behavior. Placed as a NETWORK interceptor so it decompresses before the app-level HTTP
+ * logger reads the body.
+ */
+class GzipInterceptor : Interceptor {
+    override fun intercept(chain: Interceptor.Chain): Response {
+        val resp = chain.proceed(chain.request())
+        val enc = resp.header("Content-Encoding")
+        val body = resp.body
+        if (body == null || enc == null || !enc.equals("gzip", ignoreCase = true)) return resp
+        val decompressed = GzipSource(body.source()).buffer()
+            .asResponseBody(body.contentType(), -1L)
+        return resp.newBuilder()
+            .removeHeader("Content-Encoding")
+            .removeHeader("Content-Length")
+            .body(decompressed)
+            .build()
+    }
+}
+
+/**
  * control). Ported from `zeekr_ev_api` appSignedPost/appSignedGet:
  *   HeaderInterceptor -> LOGGED_IN_HEADERS + authorization + (x-vin)
  *   SignInterceptor   -> X-API-SIGNATURE-NONCE + X-TIMESTAMP + X-SIGNATURE

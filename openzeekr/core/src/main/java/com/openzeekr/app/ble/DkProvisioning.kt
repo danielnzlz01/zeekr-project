@@ -62,6 +62,7 @@ class DkProvisioning(
         // redacted and body values (digitalKey, signature, cmacKeyCert, …) are scrubbed to "***".
         val httpLog = com.openzeekr.app.net.HttpLog.interceptor()
         val ok = OkHttpClient.Builder()
+            .addNetworkInterceptor(com.openzeekr.app.net.GzipInterceptor())
             .addInterceptor(HeaderInterceptor(store))
             .addInterceptor(SignInterceptor(store))
             .addInterceptor { chain ->
@@ -249,6 +250,79 @@ class DkProvisioning(
             _state.value = State(Step.DONE, "dkId=$dkId" + (shareStatus?.let { " shareStatus=$it" } ?: " (owner)"))
             Unit
         }.onFailure { Logx.e("provision", "=== provision FAILED ===", it); _state.value = State(Step.ERROR, it.message) }
+    }
+
+    /**
+     * DEV probe for the `036708` "model not configured with Bluetooth calibration information"
+     * wall (seen on the MX/EM backend). The stock spoof is mobileModel="Pixel 6a", which is
+     * calibrated in EU but apparently not in this market. This fires key-info + phonecoef at THIS
+     * car for a batch of mobileBrand/mobileModel pairs and logs which (if any) the backend has
+     * calibration for:
+     *   - a line with `key-info code=000000 dk>0` => that model works; spoof it in [keyInfo].
+     *   - ALL lines `key-info code=036708` => this market has no Android BLE calibration for the
+     *     car (iOS/UWB only), so client-side spoofing can't unlock BLE DK here.
+     * Reuses the already-enrolled cert/bound device from a prior [provision] run. HTTP-logged.
+     */
+    suspend fun probeCalibrationModels(): Result<String> = withContext(Dispatchers.IO) {
+        runCatching {
+            val cfg = store.current()
+            val userId = cfg.userId.ifBlank { error("account userId missing (log in first)") }
+            val vin = cfg.vin.ifBlank { error("VIN not set (log in first)") }
+            val deviceId = identity.deviceId
+            val sig = { identity.signDkMessage(userId, vin) }
+            // Enrol our cert first — key-list/key-info verify the ECDSA signature against the
+            // enrolled cert, so without it the gateway returns 061203 验签失败 (seen on a fresh
+            // install / owner account that never provisioned).
+            runCatching {
+                val cr = api.createAppCertificate(CreateCertReq(deviceId, identity.buildCsrPem()))
+                Logx.d("provision", "PROBE cert code=${cr.code} (${cr.data?.cert?.length ?: 0}B)")
+            }.onFailure { Logx.w("provision", "PROBE cert enrol: ${it.message} (continuing)") }
+            // Need a dkId to call key-info against: reuse an existing key, else mint one.
+            val kl = api.keyList(KeyListReq(deviceId = deviceId, dkType = 2, signature = sig()))
+            val dkId = kl.data?.firstOrNull()?.dkId ?: run {
+                Logx.d("provision", "PROBE key-list empty (code=${kl.code}) — minting a key to probe against …")
+                val cr = createOwnerBluKeyWithRetry(deviceId, sig)
+                cr.data?.dkId ?: error("no dkId (key-list=${kl.code}, create=${cr.code} ${cr.msg})")
+            }
+            Logx.d("provision", "PROBE start dkId=$dkId — testing calibration by model …")
+            val candidates = listOf(
+                // ---- approved for Zeekr 7X per Zeekr's list (most likely calibrated on this car) ----
+                "google" to "Pixel 8", "google" to "Pixel 7",
+                "OnePlus" to "OnePlus 12", "OnePlus" to "CPH2581", "OnePlus" to "PJD110",
+                "OnePlus" to "OnePlus 12R", "OnePlus" to "CPH2611",
+                "OnePlus" to "OnePlus 13", "OnePlus" to "CPH2653",
+                "samsung" to "Galaxy S24 Ultra", "samsung" to "SM-S928B",
+                "samsung" to "Galaxy S24", "samsung" to "SM-S921B",
+                "samsung" to "Galaxy S23 Ultra", "samsung" to "SM-S918B",
+                "samsung" to "Galaxy S23+", "samsung" to "SM-S916B",
+                "samsung" to "Galaxy S22 Ultra", "samsung" to "SM-S908B",
+                "samsung" to "Galaxy S22", "samsung" to "SM-S901B",
+                "samsung" to "Galaxy S21 Ultra", "samsung" to "SM-G998B",
+                "samsung" to "Galaxy A55", "samsung" to "SM-A556B",
+                "samsung" to "Galaxy A54 5G", "samsung" to "SM-A546B",
+                "samsung" to "Galaxy Z Flip5", "samsung" to "SM-F731B",
+                // ---- controls: approved for 001 & X only — expected to 036708 on a 7X ----
+                "google" to "Pixel 6a", "google" to "Pixel 9",
+            )
+            var winner: String? = null
+            for ((brand, model) in candidates) {
+                val ki = runCatching { api.keyInfo(deviceId, dkId, brand, model, sig()) }
+                    .getOrElse { DkResp(code = "EXC", msg = it.message) }
+                val pc = runCatching { api.phoneCoef(brand, model, null) }.getOrNull()
+                val ok = ki.code == "000000" && !ki.data?.digitalKey.isNullOrBlank()
+                if (ok && winner == null) winner = "$brand / $model"
+                Logx.d("provision", "PROBE ${if (ok) "✓" else "·"} brand=$brand model=$model | " +
+                    "key-info code=${ki.code} dk=${ki.data?.digitalKey?.length ?: 0} " +
+                    "coefBig=${ki.data?.coefBigParam?.length ?: 0} | " +
+                    "phonecoef code=${pc?.code} coefBig=${pc?.data?.coefBigParam?.length ?: 0} " +
+                    "coefSmall=${pc?.data?.coefSmallParam?.length ?: 0} | msg=${ki.msg}")
+                kotlinx.coroutines.delay(600)   // gentle on the gateway rate-limit
+            }
+            val summary = winner?.let { "Calibrated model found: $it — spoof it in key-info." }
+                ?: "No Android model accepted (all 036708/none) — this market has no Android BLE calibration for the car."
+            Logx.d("provision", "PROBE done — $summary")
+            summary
+        }.onFailure { Logx.e("provision", "PROBE failed", it) }
     }
 
     /**

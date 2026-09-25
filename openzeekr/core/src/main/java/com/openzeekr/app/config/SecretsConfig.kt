@@ -87,6 +87,12 @@ data class SecretsConfig(
      *  app-server (inbox) and message-centre (push) all hang off this one host. Seeded from the
      *  selected [com.openzeekr.app.net.Region]; user-overridable for an unverified region. */
     val azureHost: String = "https://gateway-pub-azure.zeekr.eu",
+    /** User-center (login) service path segment on [azureHost]. EU "zeekr-cuc-idaas"; the EM markets
+     *  region-suffix it, e.g. LA/MX "zeekr-cuc-idaas-la". Seeded per region by [ConfigStore.setRegion]. */
+    val usercenterService: String = "zeekr-cuc-idaas",
+    /** Message-centre service path segment on [azureHost] (push). EU "zom-message-core"; the EM
+     *  markets region-prefix it, e.g. LA/MX "la-message-core". Seeded per region. */
+    val messageCoreService: String = "zom-message-core",
     /** xchanger/ECARX DK-backend host (scheme+host, no trailing slash). Seeded from the region. */
     val xchangerHost: String = "https://api-zk.ecloudeu.com",
     /** AWS SNS region the message-centre registers the push endpoint under (EU→eu-central-1). */
@@ -228,12 +234,12 @@ data class SecretsConfig(
 
     // ---- region-derived hosts (all hang off [azureHost] / [xchangerHost], seeded per region) ----
     private val azureBase: String get() = azureHost.trimEnd('/')
-    /** User-center (login) base, trailing slash (e.g. …/zeekr-cuc-idaas/). */
-    val usercenterUrl: String get() = "$azureBase/zeekr-cuc-idaas/"
+    /** User-center (login) base, trailing slash (e.g. …/zeekr-cuc-idaas/ or …/zeekr-cuc-idaas-la/). */
+    val usercenterUrl: String get() = "$azureBase/$usercenterService/"
     /** App-server base, trailing slash (e.g. …/overseas-app/). */
     val appServerUrl: String get() = "$azureBase/overseas-app/"
     /** Message-centre service root (no trailing slash) for FCM push registration. */
-    val messageCoreUrl: String get() = "$azureBase/zom-message-core"
+    val messageCoreUrl: String get() = "$azureBase/$messageCoreService"
     /** Inbox base (no trailing slash) — sub-paths /home, /read-all appended by callers. */
     val inboxUrl: String get() = "$azureBase/overseas-app/member/inbox"
     /** xchanger DK-backend session/secure URL (full, with the identity_type query). */
