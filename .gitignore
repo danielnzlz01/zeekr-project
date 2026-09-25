@@ -1,0 +1,14 @@
+# Local Python environment.
+.venv/
+
+# Local reverse-engineering captures and generated dumps.
+btkey-log*.txt
+frida-capture*.txt
+dump.js
+mmkv-dump/
+
+# Extracted and rebuilt APK artifacts.
+original_apk_v1.5.5/
+z_misc/
+*.apk
+*.idsig
