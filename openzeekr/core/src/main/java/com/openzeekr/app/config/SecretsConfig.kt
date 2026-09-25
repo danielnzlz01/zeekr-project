@@ -217,7 +217,7 @@ data class SecretsConfig(
         if (hmacSecretKey.isBlank()) add("hmac_secret_key is required")
         if (passwordPublicKey.isBlank()) add("password_public_key is required")
         if (prodSecret.isBlank()) add("prod_secret is required")
-        if (vin.isBlank()) add("vin is required")
+        // VIN is returned by the vehicle-list login step, so it must not block sign-in after sign-out.
 
         // Overseas pair
         if (overseasAccessKey.isBlank() != overseasSecretKey.isBlank()) {
@@ -250,8 +250,15 @@ data class SecretsConfig(
 
     // ---- region-derived hosts (all hang off [azureHost] / [xchangerHost], seeded per region) ----
     private val azureBase: String get() = azureHost.trimEnd('/')
-    /** User-center (login) base, trailing slash (e.g. …/zeekr-cuc-idaas/ or …/zeekr-cuc-idaas-la/). */
-    val usercenterUrl: String get() = "$azureBase/$usercenterService/"
+    /** User-center base, preserving dev region overrides and the v0.1.7 SEA tenant path. */
+    val usercenterUrl: String get() {
+        val service = if (regionCode.equals("SEA", ignoreCase = true)) {
+            "zeekr-cuc-idaas-sea"
+        } else {
+            usercenterService
+        }
+        return "$azureBase/$service/"
+    }
     /** App-server base, trailing slash (e.g. …/overseas-app/). */
     val appServerUrl: String get() = "$azureBase/overseas-app/"
     /** Message-centre service root (no trailing slash) for FCM push registration. */
